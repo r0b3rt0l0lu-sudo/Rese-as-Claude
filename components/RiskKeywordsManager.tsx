@@ -77,7 +77,7 @@ export default function RiskKeywordsManager({ keywords }: { keywords: Keyword[] 
         <button
           type="submit"
           disabled={submitting || keyword.trim().length < 2}
-          className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60"
+          className="rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60"
         >
           Agregar
         </button>

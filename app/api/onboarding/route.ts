@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_RISK_KEYWORDS } from "@/lib/riskKeywords";
 import { logAudit } from "@/lib/audit";
@@ -13,6 +14,8 @@ const schema = z.object({
   languages: z.array(z.string()).min(1),
   policy: z.string().min(3),
   neverSay: z.string().min(3),
+  email: z.string().email(),
+  password: z.string().min(8),
 });
 
 export async function POST(req: NextRequest) {
@@ -31,6 +34,13 @@ export async function POST(req: NextRequest) {
   }
   const data = parsed.data;
 
+  const existingEmail = await prisma.business.findUnique({ where: { email: data.email } });
+  if (existingEmail) {
+    return NextResponse.json({ error: "Ese correo ya está en uso." }, { status: 409 });
+  }
+
+  const passwordHash = await bcrypt.hash(data.password, 10);
+
   const business = await prisma.business.create({
     data: {
       name: data.name,
@@ -38,6 +48,8 @@ export async function POST(req: NextRequest) {
       brandTone: data.brandTone,
       responderName: data.responderName,
       languages: data.languages.join(","),
+      email: data.email,
+      passwordHash,
       knowledgeBase: {
         create: [
           { type: "ONBOARDING", label: "Tono de marca", value: data.brandTone },

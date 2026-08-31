@@ -36,7 +36,7 @@ export default async function DashboardPage() {
         action={
           <Link
             href="/reviews/simulate"
-            className="inline-flex items-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 transition-colors"
+            className="inline-flex items-center rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 transition-colors"
           >
             + Recibir reseña de prueba
           </Link>
@@ -57,7 +57,7 @@ export default async function DashboardPage() {
       <div className="bg-white border border-brand-100 rounded-2xl shadow-sm">
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-semibold text-gray-900">Pendientes más urgentes</h2>
-          <Link href="/reviews" className="text-sm text-brand-600 font-medium hover:underline">
+          <Link href="/reviews" className="text-sm text-accent-700 font-medium hover:underline">
             Ver bandeja completa →
           </Link>
         </div>
@@ -114,7 +114,7 @@ function StatCard({
   return (
     <div className={`rounded-xl p-4 ${classes[tone]}`}>
       <div className="flex items-center justify-between">
-        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-3xl font-serif font-semibold">{value}</p>
         <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm ${iconBg[tone]}`}>
           {icon}
         </span>

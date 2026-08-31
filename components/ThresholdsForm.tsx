@@ -69,7 +69,7 @@ export default function ThresholdsForm({
       <button
         onClick={handleSave}
         disabled={saving}
-        className="mt-4 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60"
+        className="mt-4 rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60"
       >
         {saving ? "Guardando..." : saved ? "Guardado ✓" : "Guardar cambios"}
       </button>

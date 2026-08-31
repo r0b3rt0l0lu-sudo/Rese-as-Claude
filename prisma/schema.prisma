@@ -22,6 +22,10 @@ model Business {
   languages String // idiomas de respuesta, separados por coma (ej: "es,en")
   responderName String // nombre/firma de quien responde en nombre del negocio
 
+  // Acceso: cuenta única del dueño, creada como parte del onboarding.
+  email        String @unique
+  passwordHash String
+
   // Confianza progresiva / modo sombra
   shadowModeReviewThreshold Int     @default(10) // nº de respuestas manuales antes de poder ofrecer autopiloto
   autopilotApprovalThreshold Float  @default(0.85) // % mínimo aprobado-sin-editar (riesgo bajo) para ofrecer autopiloto
@@ -48,6 +52,7 @@ enum KnowledgeEntryType {
   POLICY // política de devoluciones/cancelaciones u otra política declarada
   NEVER_SAY // cosas que la IA nunca debe prometer o decir
   LEARNED // regla aprendida a partir de una edición o feedback de regeneración
+  DOCUMENT // texto extraído de un documento/PDF subido por el negocio
 }
 
 model KnowledgeBaseEntry {

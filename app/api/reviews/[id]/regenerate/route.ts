@@ -5,7 +5,7 @@ import { requireCurrentBusiness } from "@/lib/business";
 import { generateResponse } from "@/lib/ai";
 import { logAudit } from "@/lib/audit";
 
-const schema = z.object({ feedback: z.string().min(2) });
+const schema = z.object({ feedback: z.string().optional() });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const business = await requireCurrentBusiness();
@@ -24,13 +24,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { feedback } = parsed.data;
+  const feedback = parsed.data.feedback?.trim() || null;
 
   const latest = review.responses[0];
   const kbEntries = await prisma.knowledgeBaseEntry.findMany({
     where: { businessId: business.id, active: true },
   });
 
+  // Sin feedback, igual se pide una versión ALTERNATIVA (no la misma de
+  // siempre): ver lib/ai.ts, que varía la redacción cuando hay
+  // previousContent aunque no haya feedback explícito.
   const content = await generateResponse(
     {
       business,
@@ -54,22 +57,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     },
   });
 
-  await prisma.knowledgeBaseEntry.create({
-    data: {
-      businessId: business.id,
-      type: "LEARNED",
-      label: "Preferencia aprendida de una regeneración",
-      value: feedback,
-      sourceReviewId: review.id,
-    },
-  });
+  // Solo se guarda como regla aprendida si el dueño realmente dio feedback
+  // en palabras — pedir "otra versión" sin más no enseña nada nuevo.
+  if (feedback) {
+    await prisma.knowledgeBaseEntry.create({
+      data: {
+        businessId: business.id,
+        type: "LEARNED",
+        label: "Preferencia aprendida de una regeneración",
+        value: feedback,
+        sourceReviewId: review.id,
+      },
+    });
+  }
 
   await logAudit({
     businessId: business.id,
     reviewId: review.id,
     action: "RESPONSE_REGENERATED",
     actor: "HUMAN",
-    detail: `Feedback: "${feedback}"`,
+    detail: feedback ? `Feedback: "${feedback}"` : "Regenerada sin feedback (pidió otra versión).",
   });
 
   return NextResponse.json({ content: newResponse.content });

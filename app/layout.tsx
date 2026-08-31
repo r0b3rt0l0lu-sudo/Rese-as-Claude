@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { getCurrentBusiness } from "@/lib/business";
 import { prisma } from "@/lib/prisma";
 import Sidebar from "@/components/Sidebar";
+import Providers from "@/components/Providers";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
   weight: "100 900",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -37,20 +45,22 @@ export default async function RootLayout({
 
   return (
     <html lang="es">
-      <body className={`${geistSans.variable} antialiased`}>
-        {business ? (
-          <div className="flex min-h-screen">
-            <Sidebar
-              businessName={business.name}
-              pendingCount={pendingCount}
-              unreadNotifications={unreadNotifications}
-              autopilotEnabled={business.autopilotEnabled}
-            />
-            <main className="flex-1 min-w-0">{children}</main>
-          </div>
-        ) : (
-          <main>{children}</main>
-        )}
+      <body className={`${geistSans.variable} ${playfair.variable} antialiased`}>
+        <Providers>
+          {business ? (
+            <div className="flex min-h-screen">
+              <Sidebar
+                businessName={business.name}
+                pendingCount={pendingCount}
+                unreadNotifications={unreadNotifications}
+                autopilotEnabled={business.autopilotEnabled}
+              />
+              <main className="flex-1 min-w-0">{children}</main>
+            </div>
+          ) : (
+            <main>{children}</main>
+          )}
+        </Providers>
       </body>
     </html>
   );

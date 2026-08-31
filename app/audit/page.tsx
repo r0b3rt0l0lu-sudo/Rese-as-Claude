@@ -39,7 +39,7 @@ export default async function AuditPage() {
               <div className="text-right shrink-0">
                 <p className="text-xs text-gray-400">{new Date(log.createdAt).toLocaleString("es")}</p>
                 {log.reviewId && (
-                  <Link href={`/reviews/${log.reviewId}`} className="text-xs font-medium text-brand-600 hover:underline">
+                  <Link href={`/reviews/${log.reviewId}`} className="text-xs font-medium text-accent-700 hover:underline">
                     Ver reseña →
                   </Link>
                 )}

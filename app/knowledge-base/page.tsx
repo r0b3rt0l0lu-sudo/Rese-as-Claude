@@ -2,6 +2,7 @@ import { requireCurrentBusiness } from "@/lib/business";
 import { prisma } from "@/lib/prisma";
 import PageHeader from "@/components/PageHeader";
 import KnowledgeBaseManager from "@/components/KnowledgeBaseManager";
+import DocumentUploader from "@/components/DocumentUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ export default async function KnowledgeBasePage() {
         title="Base de conocimiento"
         description="Todo lo que la IA usa para responder: tu onboarding, tus políticas, lo que nunca debe decir, y lo que ha aprendido de tus ediciones y feedback."
       />
+      <DocumentUploader />
       <KnowledgeBaseManager entries={entries} />
     </div>
   );

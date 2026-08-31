@@ -33,7 +33,7 @@ export default function AutopilotBanner({ eligibility }: { eligibility: Autopilo
       <button
         onClick={handleEnable}
         disabled={loading}
-        className="shrink-0 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60 transition-colors"
+        className="shrink-0 rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60 transition-colors"
       >
         {loading ? "Activando..." : "Activar autopiloto"}
       </button>

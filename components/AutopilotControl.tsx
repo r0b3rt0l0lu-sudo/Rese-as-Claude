@@ -52,7 +52,7 @@ export default function AutopilotControl({
             onClick={() => toggle(true)}
             disabled={loading || !eligibility.eligible}
             title={!eligibility.eligible ? "Aún no cumples los requisitos de confianza progresiva" : undefined}
-            className="shrink-0 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-40"
+            className="shrink-0 rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-40"
           >
             Activar autopiloto
           </button>

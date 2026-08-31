@@ -95,7 +95,7 @@ function Tab({ href, active, label }: { href: string; active: boolean; label: st
     <Link
       href={href}
       className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-        active ? "bg-brand-500 text-white" : "bg-white border border-gray-200 text-gray-600 hover:border-brand-300"
+        active ? "bg-brand-900 text-white" : "bg-white border border-gray-200 text-gray-600 hover:border-brand-300"
       }`}
     >
       {label}

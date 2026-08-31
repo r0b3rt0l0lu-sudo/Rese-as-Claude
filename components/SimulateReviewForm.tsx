@@ -41,7 +41,7 @@ export default function SimulateReviewForm({ examples }: { examples: QuickExampl
         <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del autor de la reseña</label>
         <input
           required
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-900 focus:ring-1 focus:ring-brand-500 outline-none"
           value={authorName}
           onChange={(e) => setAuthorName(e.target.value)}
           placeholder="Ej: Carla Pérez"
@@ -57,7 +57,7 @@ export default function SimulateReviewForm({ examples }: { examples: QuickExampl
               key={n}
               onClick={() => setRating(n)}
               className={`h-10 w-10 rounded-lg text-sm font-semibold border transition-colors ${
-                rating === n ? "bg-brand-500 text-white border-brand-500" : "border-gray-300 text-gray-600"
+                rating === n ? "bg-brand-900 text-white border-brand-900" : "border-gray-300 text-gray-600"
               }`}
             >
               {n}★
@@ -71,7 +71,7 @@ export default function SimulateReviewForm({ examples }: { examples: QuickExampl
         <textarea
           required
           rows={4}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-900 focus:ring-1 focus:ring-brand-500 outline-none"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Escribe o pega el texto de una reseña..."
@@ -103,7 +103,7 @@ export default function SimulateReviewForm({ examples }: { examples: QuickExampl
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60 transition-colors"
+        className="w-full rounded-lg bg-brand-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60 transition-colors"
       >
         {submitting ? "Procesando..." : "Recibir reseña y generar respuesta"}
       </button>

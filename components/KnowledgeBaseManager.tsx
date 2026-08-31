@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 interface Entry {
   id: string;
-  type: "ONBOARDING" | "POLICY" | "NEVER_SAY" | "LEARNED";
+  type: "ONBOARDING" | "POLICY" | "NEVER_SAY" | "LEARNED" | "DOCUMENT";
   label: string;
   value: string;
   active: boolean;
@@ -18,6 +18,7 @@ const TYPE_LABELS: Record<Entry["type"], string> = {
   POLICY: "Política",
   NEVER_SAY: "Nunca decir",
   LEARNED: "Aprendida (feedback / edición)",
+  DOCUMENT: "Documentos subidos",
 };
 
 const TYPE_ICON: Record<Entry["type"], string> = {
@@ -25,6 +26,7 @@ const TYPE_ICON: Record<Entry["type"], string> = {
   POLICY: "📜",
   NEVER_SAY: "🚫",
   LEARNED: "✨",
+  DOCUMENT: "📄",
 };
 
 export default function KnowledgeBaseManager({ entries }: { entries: Entry[] }) {
@@ -57,7 +59,7 @@ export default function KnowledgeBaseManager({ entries }: { entries: Entry[] }) 
     router.refresh();
   }
 
-  const grouped = (["ONBOARDING", "POLICY", "NEVER_SAY", "LEARNED"] as const).map((t) => ({
+  const grouped = (["ONBOARDING", "POLICY", "NEVER_SAY", "LEARNED", "DOCUMENT"] as const).map((t) => ({
     type: t,
     items: entries.filter((e) => e.type === t),
   }));
@@ -93,7 +95,7 @@ export default function KnowledgeBaseManager({ entries }: { entries: Entry[] }) 
         <button
           type="submit"
           disabled={submitting || !label || !value}
-          className="mt-3 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60"
+          className="mt-3 rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60"
         >
           Agregar
         </button>
@@ -121,7 +123,9 @@ export default function KnowledgeBaseManager({ entries }: { entries: Entry[] }) 
                 <li key={item.id} className="px-5 py-3 flex items-start justify-between gap-3">
                   <div className={item.active ? "" : "opacity-40"}>
                     <p className="text-sm font-medium text-gray-800">{item.label}</p>
-                    <p className="text-sm text-gray-500">{item.value}</p>
+                    <p className={`text-sm text-gray-500 ${item.type === "DOCUMENT" ? "line-clamp-3" : ""}`}>
+                      {item.value}
+                    </p>
                   </div>
                   <button
                     onClick={() => handleToggle(item.id, !item.active)}

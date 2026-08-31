@@ -38,7 +38,7 @@ export default function NotificationsList({ notifications }: { notifications: No
     <div>
       {hasUnread && (
         <div className="flex justify-end mb-3">
-          <button onClick={markAllRead} className="text-sm text-brand-600 font-medium hover:underline">
+          <button onClick={markAllRead} className="text-sm text-accent-700 font-medium hover:underline">
             Marcar todas como leídas
           </button>
         </div>
@@ -62,7 +62,7 @@ export default function NotificationsList({ notifications }: { notifications: No
                 <p className="text-sm text-gray-500 mt-0.5">{n.body}</p>
                 <div className="flex items-center gap-3 mt-2">
                   {n.reviewId && (
-                    <Link href={`/reviews/${n.reviewId}`} className="text-xs font-medium text-brand-600 hover:underline">
+                    <Link href={`/reviews/${n.reviewId}`} className="text-xs font-medium text-accent-700 hover:underline">
                       Ver reseña →
                     </Link>
                   )}

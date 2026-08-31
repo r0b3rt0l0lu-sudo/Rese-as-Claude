@@ -73,7 +73,6 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
   }
 
   async function handleRegenerate() {
-    if (!feedback.trim()) return;
     setBusy("regenerate");
     setError(null);
     try {
@@ -125,7 +124,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
       <div className="bg-white border border-brand-100 rounded-2xl shadow-sm p-5">
         <label className="block text-sm font-medium text-gray-700 mb-2">Respuesta sugerida</label>
         <textarea
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-900 focus:ring-1 focus:ring-brand-500 outline-none disabled:bg-gray-50 disabled:text-gray-500"
           rows={5}
           value={content}
           disabled={!isPending}
@@ -138,7 +137,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
               ¿Por qué hiciste este cambio? (opcional — ayuda a mejorar futuras respuestas)
             </label>
             <input
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-900 focus:ring-1 focus:ring-brand-500 outline-none"
               value={editNote}
               onChange={(e) => setEditNote(e.target.value)}
               placeholder="Ej: preferimos no usar la palabra 'lamentamos'"
@@ -154,7 +153,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
               <button
                 onClick={handleApprove}
                 disabled={busy !== null}
-                className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60 transition-colors"
+                className="rounded-lg bg-brand-900 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-800 disabled:opacity-60 transition-colors"
               >
                 {busy === "approve" ? "Aprobando..." : "✅ Aprobar y copiar"}
               </button>
@@ -163,7 +162,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
                 disabled={busy !== null}
                 className="rounded-lg border border-accent-200 px-4 py-2 text-sm font-medium text-accent-700 hover:bg-accent-50 disabled:opacity-60 transition-colors"
               >
-                🔄 Regenerar con feedback
+                🔄 Regenerar
               </button>
               <button
                 onClick={handleCopy}
@@ -183,24 +182,25 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
         {isPending && showFeedbackBox && (
           <div className="mt-4 border-t border-gray-100 pt-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dile a la IA qué cambiar (en tus palabras)
+              Dile a la IA qué cambiar <span className="text-gray-400 font-normal">(opcional)</span>
             </label>
             <textarea
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-900 focus:ring-1 focus:ring-brand-500 outline-none"
               rows={2}
-              placeholder='Ej: "hazla más formal" o "menciona que ya solucionamos el problema"'
+              placeholder='Ej: "hazla más formal" o "menciona que ya solucionamos el problema" — o déjalo vacío para simplemente ver otra versión'
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
             />
             <button
               onClick={handleRegenerate}
-              disabled={busy !== null || !feedback.trim()}
+              disabled={busy !== null}
               className="mt-2 rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-600 disabled:opacity-60 transition-colors"
             >
-              {busy === "regenerate" ? "Regenerando..." : "Generar nueva versión"}
+              {busy === "regenerate" ? "Regenerando..." : "Generar otra versión"}
             </button>
             <p className="text-xs text-gray-400 mt-2">
-              Este feedback se guardará como una preferencia aprendida en la base de conocimiento del negocio.
+              Cada vez que le pidas otra versión, la IA genera una redacción distinta a la anterior. Si escribes
+              feedback, además se guarda como preferencia aprendida en la base de conocimiento.
             </p>
           </div>
         )}

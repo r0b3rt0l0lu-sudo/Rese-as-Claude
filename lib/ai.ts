@@ -17,6 +17,7 @@ export function buildKnowledgeBaseContext(entries: Pick<KnowledgeBaseEntry, "typ
     POLICY: entries.filter((e) => e.type === "POLICY"),
     NEVER_SAY: entries.filter((e) => e.type === "NEVER_SAY"),
     LEARNED: entries.filter((e) => e.type === "LEARNED"),
+    DOCUMENT: entries.filter((e) => e.type === "DOCUMENT"),
   };
 
   const section = (title: string, items: typeof entries) =>
@@ -27,6 +28,7 @@ export function buildKnowledgeBaseContext(entries: Pick<KnowledgeBaseEntry, "typ
     section("Políticas declaradas", byType.POLICY),
     section("Cosas que NUNCA se deben decir o prometer", byType.NEVER_SAY),
     section("Reglas aprendidas de respuestas anteriores (ediciones y feedback del dueño)", byType.LEARNED),
+    section("Documentos del negocio (menús, catálogos, listas de precios, etc.)", byType.DOCUMENT),
   ]
     .filter(Boolean)
     .join("\n");
@@ -59,15 +61,23 @@ function normalize(text: string): string {
     .replace(/[̀-ͯ]/g, "");
 }
 
+function pickVariant(variants: string[], previousContent?: string | null): string {
+  const candidates = previousContent ? variants.filter((v) => v.trim() !== previousContent.trim()) : variants;
+  const pool = candidates.length > 0 ? candidates : variants;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 /**
  * Genera una respuesta de ejemplo sin depender de la API de Claude.
  * No repite el texto del feedback tal cual (eso confundía a los dueños,
  * que veían su propio comentario "pegado" dentro de la respuesta pública):
  * en vez de eso, elige una variante de plantilla según palabras clave del
- * feedback, para que el resultado se vea distinto sin filtrar el feedback.
+ * feedback. Sin feedback, "regenerar" igual debe dar algo distinto a lo
+ * anterior — para eso hay varias plantillas por defecto y se sortea una
+ * distinta a la última usada.
  */
 function mockGenerate(params: GenerateParams, riskLevel: RiskLevel): string {
-  const { business, reviewRating, reviewAuthor, feedback } = params;
+  const { business, reviewRating, reviewAuthor, feedback, previousContent } = params;
   const firstName = reviewAuthor.split(" ")[0] || "Hola";
   const f = feedback ? normalize(feedback) : "";
 
@@ -88,7 +98,14 @@ function mockGenerate(params: GenerateParams, riskLevel: RiskLevel): string {
     if (wantsShort) {
       return `¡Gracias ${firstName} por tu reseña! Nos alegra mucho que hayas tenido una buena experiencia. Te esperamos pronto de nuevo. — ${business.responderName}`;
     }
-    return `¡Muchas gracias ${firstName} por tomarte el tiempo de dejarnos esta reseña! Nos alegra muchísimo saber que tu experiencia con nosotros fue tan buena — comentarios como el tuyo son los que nos motivan a seguir cuidando cada detalle. En ${business.name} nos esforzamos por que cada visita se sienta especial, así que significa mucho que se haya notado. Esperamos poder recibirte de nuevo muy pronto. — ${business.responderName}`;
+    return pickVariant(
+      [
+        `¡Muchas gracias ${firstName} por tomarte el tiempo de dejarnos esta reseña! Nos alegra muchísimo saber que tu experiencia con nosotros fue tan buena — comentarios como el tuyo son los que nos motivan a seguir cuidando cada detalle. En ${business.name} nos esforzamos por que cada visita se sienta especial, así que significa mucho que se haya notado. Esperamos poder recibirte de nuevo muy pronto. — ${business.responderName}`,
+        `${firstName}, ¡qué alegría leer esto! Nos encanta saber que disfrutaste tu experiencia con nosotros, y comentarios así son justo lo que nos impulsa a seguir mejorando cada día. Todo el equipo de ${business.name} se esfuerza por cuidar cada detalle, así que gracias por notarlo y contarlo. Te esperamos con las puertas abiertas la próxima vez. — ${business.responderName}`,
+        `Gracias de corazón, ${firstName}. Reseñas como la tuya nos recuerdan por qué hacemos lo que hacemos en ${business.name} — cada comentario positivo es un empujón para seguir dando lo mejor. Nos encantaría volver a atenderte pronto y seguir mereciendo tu confianza. ¡Hasta la próxima! — ${business.responderName}`,
+      ],
+      previousContent
+    );
   }
 
   if (wantsResolved) {
@@ -100,7 +117,14 @@ function mockGenerate(params: GenerateParams, riskLevel: RiskLevel): string {
   if (wantsShort) {
     return `Hola ${firstName}, gracias por avisarnos y disculpa las molestias. Escríbenos en privado para resolverlo. — ${business.responderName}`;
   }
-  return `Hola ${firstName}, gracias por tomarte el tiempo de contarnos tu experiencia, de verdad lo valoramos. Lamentamos mucho que en esta ocasión no haya sido lo que esperabas — no es el estándar con el que queremos que te quedes de nosotros. Nos gustaría entender mejor qué pasó para poder solucionarlo: si nos escribes en privado con más detalles, con gusto lo revisamos personalmente. Gracias de nuevo por decírnoslo, comentarios como el tuyo nos ayudan a mejorar. — ${business.responderName}`;
+  return pickVariant(
+    [
+      `Hola ${firstName}, gracias por tomarte el tiempo de contarnos tu experiencia, de verdad lo valoramos. Lamentamos mucho que en esta ocasión no haya sido lo que esperabas — no es el estándar con el que queremos que te quedes de nosotros. Nos gustaría entender mejor qué pasó para poder solucionarlo: si nos escribes en privado con más detalles, con gusto lo revisamos personalmente. Gracias de nuevo por decírnoslo, comentarios como el tuyo nos ayudan a mejorar. — ${business.responderName}`,
+      `${firstName}, sentimos mucho que tu experiencia no haya estado a la altura de lo que buscamos ofrecer en ${business.name}. Tomamos muy en serio cada comentario, y el tuyo nos ayuda a ver dónde tenemos que mejorar. Nos encantaría poder conversar contigo directamente para entender mejor qué pasó y compensarte como corresponde. Gracias por darnos la oportunidad de arreglarlo. — ${business.responderName}`,
+      `Gracias por escribirnos, ${firstName}, y disculpa las molestias que esto te haya causado. No es lo que queremos que viva ningún cliente de ${business.name}, así que nos gustaría revisarlo con calma — escríbenos en privado cuando puedas para ponernos manos a la obra. Valoramos mucho que te hayas tomado el tiempo de contárnoslo. — ${business.responderName}`,
+    ],
+    previousContent
+  );
 }
 
 export async function generateResponse(params: GenerateParams, riskLevel: RiskLevel): Promise<string> {
@@ -143,7 +167,9 @@ Reseña recibida:
 ${
   feedback && previousContent
     ? `El dueño ya vio esta respuesta anterior y pidió ajustarla:\nRespuesta anterior: "${previousContent}"\nFeedback del dueño: "${feedback}"\n\nGenera una nueva versión incorporando ese feedback.`
-    : "Genera la respuesta pública a esta reseña."
+    : previousContent
+      ? `El dueño ya vio esta respuesta y quiere ver otra opción, sin feedback puntual:\nRespuesta anterior: "${previousContent}"\n\nGenera una versión ALTERNATIVA: mismo significado y mismas reglas, pero con redacción, estructura y frases claramente distintas a la anterior. No la repitas ni parafrasees mínimamente.`
+      : "Genera la respuesta pública a esta reseña."
 }
 
 Responde ÚNICAMENTE con el texto de la respuesta, sin comillas ni explicaciones adicionales.`;

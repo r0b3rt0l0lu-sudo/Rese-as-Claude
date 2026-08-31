@@ -4,12 +4,16 @@
 // atajo para pruebas (`npm run db:seed`).
 
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 import { DEFAULT_RISK_KEYWORDS } from "../lib/riskKeywords";
 import { SECTOR_TEMPLATES } from "../lib/sectorTemplates";
 import { triageReview } from "../lib/triage";
 import { generateResponse } from "../lib/ai";
 
 const prisma = new PrismaClient();
+
+const DEMO_EMAIL = "demo@vigilia.app";
+const DEMO_PASSWORD = "demo1234";
 
 async function main() {
   const existing = await prisma.business.findFirst();
@@ -19,6 +23,7 @@ async function main() {
   }
 
   const template = SECTOR_TEMPLATES.restaurante;
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
   const business = await prisma.business.create({
     data: {
@@ -27,6 +32,8 @@ async function main() {
       brandTone: template.brandTonePlaceholder,
       responderName: "María, dueña de La Marina",
       languages: "es",
+      email: DEMO_EMAIL,
+      passwordHash,
       knowledgeBase: {
         create: [
           { type: "ONBOARDING", label: "Tono de marca", value: template.brandTonePlaceholder },
@@ -78,6 +85,7 @@ async function main() {
   }
 
   console.log(`Negocio de demo "${business.name}" creado con ${template.exampleReviews.length} reseñas de ejemplo.`);
+  console.log(`Inicia sesión con: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
 }
 
 main()
