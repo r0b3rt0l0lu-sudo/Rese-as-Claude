@@ -30,6 +30,21 @@ const config: Config = {
           medium: "#D18A1F",
           high: "#DC3545",
         },
+        // Acento cálido y vivo (coral/naranja) para darle vida a la UI —
+        // se usa en detalles, badges e ilustraciones, nunca reemplaza el
+        // azul de marca en las acciones principales.
+        accent: {
+          50: "#FFF3EE",
+          100: "#FFE3D5",
+          200: "#FFC5A8",
+          300: "#FF9E6E",
+          400: "#FF7A42",
+          500: "#FF5E1F",
+          600: "#E84B10",
+          700: "#C13D0C",
+          800: "#98300F",
+          900: "#7A290F",
+        },
       },
     },
   },

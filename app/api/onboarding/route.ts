@@ -8,6 +8,7 @@ const schema = z.object({
   name: z.string().min(2),
   sector: z.enum(["restaurante", "peluqueria", "taller", "clinica", "generico"]),
   brandTone: z.string().min(3),
+  strengths: z.string().optional(),
   responderName: z.string().min(2),
   languages: z.array(z.string()).min(1),
   policy: z.string().min(3),
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest) {
         create: [
           { type: "ONBOARDING", label: "Tono de marca", value: data.brandTone },
           { type: "ONBOARDING", label: "Nombre/firma de quien responde", value: data.responderName },
+          ...(data.strengths && data.strengths.trim().length > 0
+            ? [{ type: "ONBOARDING" as const, label: "Fortalezas del negocio", value: data.strengths.trim() }]
+            : []),
           { type: "POLICY", label: "Política de devoluciones/cancelaciones", value: data.policy },
           { type: "NEVER_SAY", label: "Cosas que la IA nunca debe prometer o decir", value: data.neverSay },
         ],

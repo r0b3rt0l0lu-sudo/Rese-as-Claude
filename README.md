@@ -1,4 +1,4 @@
-# Reseñas IA — Respondedor de reseñas de Google para PYMEs
+# VigilIA — Respondedor de reseñas de Google para PYMEs
 
 MVP de una app que ayuda a un negocio pequeño (restaurante, peluquería, taller, clínica...) a
 responder sus reseñas de Google: detecta reseñas sin responder, clasifica el riesgo, genera una
@@ -13,7 +13,8 @@ incremental (ver [Roadmap](#roadmap--próximos-pasos) más abajo).
 ## Stack
 
 - **Next.js 14 (App Router)** + TypeScript — interfaz y backend en un solo proyecto.
-- **Tailwind CSS** — estilos, con la paleta de marca "Confianza" (azul) en `tailwind.config.ts`.
+- **Tailwind CSS** — estilos, con la paleta de marca "Confianza" (azul) + un acento cálido
+  (naranja/coral) para detalles vivos, ambos en `tailwind.config.ts`.
 - **Prisma + SQLite** — base de datos como un archivo local (`prisma/dev.db`), sin instalar nada.
 - **Claude (Anthropic API)** para la generación de respuestas, con un generador "mock" de respaldo
   si no configuras una API key (para que puedas probar todo el flujo sin costo ni configuración).
@@ -51,13 +52,15 @@ npm run build        # build de producción
 
 ## Flujo del MVP
 
-1. **Onboarding** (`/onboarding`): nombre del negocio, sector, tono de marca, política de
+1. **Onboarding** (`/onboarding`): nombre del negocio, sector, tono de marca, fortalezas del
+   negocio (opcional, para personalizar mejor las respuestas), política de
    devoluciones/cancelaciones, cosas que la IA nunca debe decir, firma de quien responde, e
    idioma(s). Todo esto se guarda de forma estructurada como la base de conocimiento inicial del
    negocio (no texto libre suelto).
 2. **Simular reseña** (`/reviews/simulate`): como todavía no hay integración real con Google, este
-   formulario simula la llegada de una reseña nueva. Dispara automáticamente el triaje de riesgo y
-   la generación de la respuesta.
+   formulario simula la llegada de una reseña nueva. Los ejemplos rápidos de "un click" están
+   adaptados al sector elegido en el onboarding (incluyendo un caso de riesgo alto por sector).
+   Dispara automáticamente el triaje de riesgo y la generación de la respuesta.
 3. **Triaje de riesgo**: cada reseña se clasifica en riesgo bajo / medio / alto (`lib/triage.ts`).
    El riesgo alto se detecta por palabras clave configurables (`lib/riskKeywords.ts`, editable
    desde Ajustes) y **siempre** gana sobre la calificación — ni siquiera una reseña de 5 estrellas
@@ -87,10 +90,11 @@ npm run build        # build de producción
   intervención humana": el dueño ya no necesita hacer clic en aprobar, pero sigue siendo quien
   pega la respuesta en Google (no hay forma de evitar ese paso sin la API real).
 - **Plantillas por sector.** `lib/sectorTemplates.ts` define plantillas de onboarding y ejemplos
-  por sector. El MVP prioriza **Restaurantes** con contenido completo; el resto (peluquería,
-  taller, clínica) queda con plantillas básicas listas para ampliar, y "Genérico" cubre cualquier
-  otro rubro. El modelo de datos (`KnowledgeBaseEntry`, `RiskKeyword` por negocio) ya soporta
-  agregar sectores nuevos sin cambios estructurales.
+  de reseñas (bajo/medio/alto riesgo) por sector — Restaurante, Peluquería, Taller, Clínica y
+  Genérico. El MVP prioriza **Restaurantes** en la narrativa de producto, pero todos los sectores
+  incluidos tienen ejemplos completos y acordes a ese tipo de negocio. El modelo de datos
+  (`KnowledgeBaseEntry`, `RiskKeyword` por negocio) ya soporta agregar sectores nuevos sin cambios
+  estructurales.
 - **Canal de notificaciones preparado para WhatsApp.** `Notification.channel` ya distingue
   `IN_APP` de `WHATSAPP`; el MVP solo implementa `IN_APP`, pero agregar WhatsApp más adelante no
   requiere cambiar el modelo de datos.

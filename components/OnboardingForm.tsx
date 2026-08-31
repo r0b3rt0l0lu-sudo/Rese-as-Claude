@@ -21,6 +21,7 @@ export default function OnboardingForm() {
   const [name, setName] = useState("");
   const [sector, setSector] = useState<Sector>("restaurante");
   const [brandTone, setBrandTone] = useState("");
+  const [strengths, setStrengths] = useState("");
   const [responderName, setResponderName] = useState("");
   const [languages, setLanguages] = useState<string[]>(["es"]);
   const [policy, setPolicy] = useState("");
@@ -46,7 +47,7 @@ export default function OnboardingForm() {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, sector, brandTone, responderName, languages, policy, neverSay }),
+        body: JSON.stringify({ name, sector, brandTone, strengths, responderName, languages, policy, neverSay }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -64,8 +65,8 @@ export default function OnboardingForm() {
     <div className="min-h-screen bg-gradient-to-b from-brand-50 to-white flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
-          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500 text-white text-xl font-bold mb-3">
-            R
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 text-white text-xl font-bold mb-3 shadow-sm">
+            V
           </span>
           <h1 className="text-2xl font-bold text-gray-900">Configura tu negocio</h1>
           <p className="text-gray-500 mt-1 text-sm">
@@ -121,8 +122,7 @@ export default function OnboardingForm() {
                   ))}
                 </select>
                 <p className="text-xs text-gray-400 mt-1">
-                  Usamos tu sector para sugerirte ejemplos y plantillas relevantes (por ahora, Restaurantes tiene
-                  ejemplos más completos).
+                  Usamos tu sector para sugerirte ejemplos y plantillas relevantes a tu tipo de negocio.
                 </p>
               </div>
             </div>
@@ -139,6 +139,22 @@ export default function OnboardingForm() {
                   value={brandTone}
                   onChange={(e) => setBrandTone(e.target.value)}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fortalezas del negocio <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <textarea
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                  rows={2}
+                  placeholder={template.strengthsPlaceholder}
+                  value={strengths}
+                  onChange={(e) => setStrengths(e.target.value)}
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Lo que te hace destacar frente a la competencia. La IA lo puede usar para personalizar mejor sus
+                  respuestas.
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -214,6 +230,7 @@ export default function OnboardingForm() {
               <SummaryRow label="Negocio" value={name} />
               <SummaryRow label="Sector" value={SECTOR_TEMPLATES[sector].label} />
               <SummaryRow label="Tono de marca" value={brandTone} />
+              <SummaryRow label="Fortalezas" value={strengths} />
               <SummaryRow label="Firma" value={responderName} />
               <SummaryRow
                 label="Idiomas"

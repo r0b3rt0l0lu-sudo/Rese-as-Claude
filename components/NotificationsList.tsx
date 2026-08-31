@@ -53,7 +53,7 @@ export default function NotificationsList({ notifications }: { notifications: No
             <li
               key={n.id}
               className={`bg-white border rounded-2xl shadow-sm p-4 flex items-start gap-3 ${
-                n.read ? "border-gray-100" : "border-brand-300"
+                n.read ? "border-gray-100" : n.type === "AUTOPILOT_SUGGESTED" ? "border-accent-300" : "border-brand-300"
               }`}
             >
               <span className="text-lg">{TYPE_ICON[n.type] ?? "🔔"}</span>

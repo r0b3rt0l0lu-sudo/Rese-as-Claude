@@ -12,7 +12,7 @@ const geistSans = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Reseñas IA — Respondedor de reseñas de Google",
+  title: "VigilIA — Respondedor de reseñas de Google",
   description: "Genera y aprueba respuestas a reseñas de Google con IA, adaptadas a tu negocio.",
 };
 

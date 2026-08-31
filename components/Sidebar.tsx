@@ -25,17 +25,17 @@ export default function Sidebar({
     <aside className="w-72 shrink-0 border-r border-brand-100 bg-white flex flex-col h-screen sticky top-0">
       <div className="px-6 py-5 border-b border-brand-100">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 text-white font-bold">
-            R
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-brand-500 to-accent-500 text-white font-bold shadow-sm">
+            V
           </span>
           <div>
-            <p className="text-sm font-semibold text-gray-900 leading-tight">Reseñas IA</p>
+            <p className="text-sm font-semibold text-gray-900 leading-tight">VigilIA</p>
             <p className="text-xs text-gray-500 leading-tight truncate max-w-[10rem]">{businessName}</p>
           </div>
         </div>
         <div className="mt-3">
           {autopilotEnabled ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent-50 px-2.5 py-1 text-xs font-medium text-accent-700">
               🚀 Autopiloto activo (riesgo bajo)
             </span>
           ) : (

@@ -48,10 +48,10 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Pendientes" value={totalPending} accent="brand" />
-        <StatCard label="Riesgo alto sin responder" value={pendingHigh} accent="high" />
-        <StatCard label="Riesgo medio sin responder" value={pendingMedium} accent="medium" />
-        <StatCard label="Respondidas en total" value={respondedCount} accent="low" />
+        <StatCard label="Pendientes" value={totalPending} tone="accent" icon="📥" />
+        <StatCard label="Riesgo alto sin responder" value={pendingHigh} tone="high" icon="🚨" />
+        <StatCard label="Riesgo medio sin responder" value={pendingMedium} tone="medium" icon="⚠️" />
+        <StatCard label="Respondidas en total" value={respondedCount} tone="low" icon="✅" />
       </div>
 
       <div className="bg-white border border-brand-100 rounded-2xl shadow-sm">
@@ -88,17 +88,38 @@ export default async function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, accent }: { label: string; value: number; accent: "brand" | "high" | "medium" | "low" }) {
+function StatCard({
+  label,
+  value,
+  tone,
+  icon,
+}: {
+  label: string;
+  value: number;
+  tone: "accent" | "high" | "medium" | "low";
+  icon: string;
+}) {
   const classes: Record<string, string> = {
-    brand: "text-brand-700 bg-brand-50",
+    accent: "text-accent-700 bg-accent-50",
     high: "text-risk-high bg-red-50",
     medium: "text-risk-medium bg-amber-50",
     low: "text-risk-low bg-emerald-50",
   };
+  const iconBg: Record<string, string> = {
+    accent: "bg-accent-100",
+    high: "bg-red-100",
+    medium: "bg-amber-100",
+    low: "bg-emerald-100",
+  };
   return (
-    <div className={`rounded-xl p-4 ${classes[accent]}`}>
-      <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs font-medium mt-0.5">{label}</p>
+    <div className={`rounded-xl p-4 ${classes[tone]}`}>
+      <div className="flex items-center justify-between">
+        <p className="text-2xl font-bold">{value}</p>
+        <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm ${iconBg[tone]}`}>
+          {icon}
+        </span>
+      </div>
+      <p className="text-xs font-medium mt-1">{label}</p>
     </div>
   );
 }

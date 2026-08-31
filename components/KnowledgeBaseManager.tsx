@@ -20,6 +20,13 @@ const TYPE_LABELS: Record<Entry["type"], string> = {
   LEARNED: "Aprendida (feedback / edición)",
 };
 
+const TYPE_ICON: Record<Entry["type"], string> = {
+  ONBOARDING: "📋",
+  POLICY: "📜",
+  NEVER_SAY: "🚫",
+  LEARNED: "✨",
+};
+
 export default function KnowledgeBaseManager({ entries }: { entries: Entry[] }) {
   const router = useRouter();
   const [label, setLabel] = useState("");
@@ -94,8 +101,17 @@ export default function KnowledgeBaseManager({ entries }: { entries: Entry[] }) 
 
       {grouped.map((group) => (
         <div key={group.type} className="bg-white border border-brand-100 rounded-2xl shadow-sm">
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900 text-sm">{TYPE_LABELS[group.type]}</h3>
+          <div
+            className={`px-5 py-3 border-b border-gray-100 flex items-center gap-2 ${
+              group.type === "LEARNED" ? "bg-accent-50/60" : ""
+            }`}
+          >
+            <span aria-hidden>{TYPE_ICON[group.type]}</span>
+            <h3
+              className={`font-semibold text-sm ${group.type === "LEARNED" ? "text-accent-700" : "text-gray-900"}`}
+            >
+              {TYPE_LABELS[group.type]}
+            </h3>
           </div>
           {group.items.length === 0 ? (
             <p className="px-5 py-4 text-sm text-gray-400">Sin entradas todavía.</p>

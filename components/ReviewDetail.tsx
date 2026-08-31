@@ -161,7 +161,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
               <button
                 onClick={() => setShowFeedbackBox((v) => !v)}
                 disabled={busy !== null}
-                className="rounded-lg border border-brand-200 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-60 transition-colors"
+                className="rounded-lg border border-accent-200 px-4 py-2 text-sm font-medium text-accent-700 hover:bg-accent-50 disabled:opacity-60 transition-colors"
               >
                 🔄 Regenerar con feedback
               </button>
@@ -195,7 +195,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
             <button
               onClick={handleRegenerate}
               disabled={busy !== null || !feedback.trim()}
-              className="mt-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-60 transition-colors"
+              className="mt-2 rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-600 disabled:opacity-60 transition-colors"
             >
               {busy === "regenerate" ? "Regenerando..." : "Generar nueva versión"}
             </button>
