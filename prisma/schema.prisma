@@ -1,0 +1,228 @@
+// Esquema de datos — Respondedor de Reseñas de Google para PYMEs
+// SQLite local para desarrollo/pruebas. Migrar a PostgreSQL en producción
+// solo requiere cambiar el "provider" del datasource (Prisma se encarga del resto).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Negocio (MVP: una sola instancia de Business por instalación — sin multi-tenant)
+// ---------------------------------------------------------------------------
+model Business {
+  id        String   @id @default(cuid())
+  name      String
+  sector    String // "restaurante" | "peluqueria" | "taller" | "clinica" | "generico"
+  brandTone String // tono de marca deseado (texto libre elegido en onboarding)
+  languages String // idiomas de respuesta, separados por coma (ej: "es,en")
+  responderName String // nombre/firma de quien responde en nombre del negocio
+
+  // Confianza progresiva / modo sombra
+  shadowModeReviewThreshold Int     @default(10) // nº de respuestas manuales antes de poder ofrecer autopiloto
+  autopilotApprovalThreshold Float  @default(0.85) // % mínimo aprobado-sin-editar (riesgo bajo) para ofrecer autopiloto
+  autopilotEnabled          Boolean @default(false)
+  autopilotEnabledAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  knowledgeBase KnowledgeBaseEntry[]
+  reviews       Review[]
+  riskKeywords  RiskKeyword[]
+  auditLogs     AuditLog[]
+  notifications Notification[]
+}
+
+// ---------------------------------------------------------------------------
+// Base de conocimiento estructurada del negocio.
+// Crece con el uso: el feedback de regeneración se guarda como nuevas entradas
+// tipo LEARNED, asociadas opcionalmente a la reseña que las originó.
+// ---------------------------------------------------------------------------
+enum KnowledgeEntryType {
+  ONBOARDING // respuesta base recogida en el onboarding inicial
+  POLICY // política de devoluciones/cancelaciones u otra política declarada
+  NEVER_SAY // cosas que la IA nunca debe prometer o decir
+  LEARNED // regla aprendida a partir de una edición o feedback de regeneración
+}
+
+model KnowledgeBaseEntry {
+  id         String             @id @default(cuid())
+  businessId String
+  business   Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  type  KnowledgeEntryType
+  label String // etiqueta corta, ej: "Política de cancelación"
+  value String // contenido en texto
+
+  sourceReviewId String? // si viene de feedback sobre una reseña concreta
+  active         Boolean @default(true)
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Palabras/patrones clave configurables para detectar riesgo alto.
+// ---------------------------------------------------------------------------
+model RiskKeyword {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  keyword  String
+  category String // "salud" | "discriminacion" | "legal" | "acoso" | "seguridad" | "menores" | "otro"
+  enabled  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Reseñas. En el MVP se "reciben" mediante un simulador manual (no hay
+// integración real con la API de Google todavía), pero el modelo ya soporta
+// un origen externo (googleReviewId) para cuando se conecte la API real.
+// ---------------------------------------------------------------------------
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ReviewStatus {
+  PENDING
+  RESPONDED
+  DISMISSED
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  googleReviewId String? // reservado para integración futura con Google Business Profile API
+  authorName     String
+  rating         Int // 1-5
+  text           String
+  reviewedAt     DateTime @default(now()) // fecha de la reseña original
+
+  riskLevel   RiskLevel
+  riskReasons String // JSON string con las razones/keywords detectadas
+
+  status ReviewStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  responses   GeneratedResponse[]
+  sendRecords SendRecord[]
+}
+
+// ---------------------------------------------------------------------------
+// Respuestas generadas (historial de versiones por reseña).
+// ---------------------------------------------------------------------------
+enum ResponseOrigin {
+  AI
+  HUMAN_EDIT
+}
+
+model GeneratedResponse {
+  id       String @id @default(cuid())
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  version    Int
+  content    String
+  origin     ResponseOrigin
+  feedback   String? // feedback en lenguaje natural que originó esta regeneración
+
+  createdAt DateTime @default(now())
+
+  sendRecord SendRecord?
+}
+
+// ---------------------------------------------------------------------------
+// Registro de envío (auditable). Modo manual asistido en el MVP: sentVia es
+// siempre MANUAL_COPY. Los campos de API quedan listos para cuando se
+// conecte Google Business Profile API.
+// ---------------------------------------------------------------------------
+enum SentVia {
+  MANUAL_COPY
+  GOOGLE_API
+}
+
+enum ApprovedBy {
+  MANUAL
+  AUTOPILOT
+}
+
+enum ApiStatus {
+  SENT
+  IN_REVIEW
+  PUBLISHED
+  REJECTED
+}
+
+model SendRecord {
+  id       String @id @default(cuid())
+  reviewId String @unique
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  responseId String @unique
+  response   GeneratedResponse @relation(fields: [responseId], references: [id])
+
+  sentVia            SentVia
+  approvedBy         ApprovedBy
+  editedBeforeApprove Boolean // clave para calcular el % de aprobación sin edición
+  apiStatus          ApiStatus? // reservado para integración futura
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Registro auditable general.
+// ---------------------------------------------------------------------------
+enum AuditActor {
+  HUMAN
+  AUTOPILOT
+  SYSTEM
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  reviewId String?
+  action   String // ej: "REVIEW_RECEIVED", "RESPONSE_GENERATED", "RESPONSE_APPROVED", "AUTOPILOT_ENABLED"...
+  actor    AuditActor
+  detail   String?
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Notificaciones in-app. El campo "channel" ya deja preparado un canal
+// "whatsapp" para una fase posterior, sin implementarlo todavía.
+// ---------------------------------------------------------------------------
+enum NotificationChannel {
+  IN_APP
+  WHATSAPP // reservado, no implementado en el MVP
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  channel  NotificationChannel @default(IN_APP)
+  type     String // "HIGH_RISK_REVIEW" | "PENDING_APPROVAL" | "AUTOPILOT_SUGGESTED" | "RESPONSE_REJECTED"
+  title    String
+  body     String
+  reviewId String?
+  read     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
