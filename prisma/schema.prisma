@@ -1,14 +1,18 @@
 // Esquema de datos — Respondedor de Reseñas de Google para PYMEs
-// SQLite local para desarrollo/pruebas. Migrar a PostgreSQL en producción
-// solo requiere cambiar el "provider" del datasource (Prisma se encarga del resto).
+// PostgreSQL (ej. Neon) tanto en desarrollo como en producción — misma base
+// de datos real en ambos casos, sin depender de un archivo SQLite local.
+// "directUrl" usa la conexión directa (sin pgbouncer) para crear/migrar
+// tablas; "url" usa la conexión agrupada ("pooled"), recomendada para el
+// tráfico normal de la app en entornos serverless como Vercel.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------------------------------------------------------------------------
