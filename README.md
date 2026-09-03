@@ -5,8 +5,7 @@ responder sus reseñas de Google: detecta reseñas sin responder, clasifica el r
 respuesta con IA adaptada al negocio, y pasa esa respuesta por un filtro humano ligero antes de
 enviarla.
 
-Este MVP corre 100% en local (base de datos SQLite en un archivo, sin servidor que instalar) y
-funciona en **modo manual asistido**: la IA genera la respuesta y tú la copias y pegas en Google.
+Funciona en **modo manual asistido**: la IA genera la respuesta y tú la copias y pegas en Google.
 La integración automática con la API real de Google Business Profile queda como mejora
 incremental (ver [Roadmap](#roadmap--próximos-pasos) más abajo).
 
@@ -15,19 +14,21 @@ incremental (ver [Roadmap](#roadmap--próximos-pasos) más abajo).
 - **Next.js 14 (App Router)** + TypeScript — interfaz y backend en un solo proyecto.
 - **Tailwind CSS** — estilos, con la paleta marino oscuro + dorado y tipografía serif (Playfair
   Display) para títulos, definidos en `tailwind.config.ts`.
-- **Prisma + SQLite** — base de datos como un archivo local (`prisma/dev.db`), sin instalar nada.
+- **Prisma + PostgreSQL** (ej. [Neon](https://neon.tech), plan gratis) — misma base de datos en
+  desarrollo y producción.
 - **NextAuth.js** (credenciales por correo/contraseña) para proteger el acceso a los datos del
   negocio.
-- **Claude (Anthropic API)** para la generación de respuestas, con un generador "mock" de respaldo
-  si no configuras una API key (para que puedas probar todo el flujo sin costo ni configuración).
+- **Claude (Anthropic API) o DeepSeek** para la generación de respuestas — configura la que
+  tengas, o ninguna y usa el generador "mock" de respaldo (para probar el flujo sin costo).
 - **pdf-parse** para extraer texto de PDFs subidos a la base de conocimiento.
+- **Desplegado en [Vercel](https://vercel.com)**, conectado a la rama de este proyecto.
 
 ## Cómo correrlo en local
 
 ```bash
 npm install
 cp .env.example .env
-npx prisma db push        # crea prisma/dev.db con el esquema
+npx prisma db push        # crea las tablas en tu base de datos Postgres (Neon)
 npm run dev
 ```
 
@@ -45,13 +46,19 @@ te pide esas credenciales antes de mostrar cualquier dato del negocio.
 
 Sin configurar nada, la app usa un generador de respuestas "mock" (plantillas basadas en la
 calificación y el tono del negocio) para que puedas probar el flujo completo de inmediato. Para
-usar generación real con Claude, agrega tu API key en `.env`:
+usar generación real, agrega **una** de estas dos API keys en `.env` (si configuras ambas, se
+prioriza Claude):
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
 ```
+o
+```
+DEEPSEEK_API_KEY=sk-...
+```
 
-La página de Ajustes siempre muestra si estás en modo mock o con IA real conectada.
+La página de Ajustes siempre muestra si estás en modo mock o con cuál proveedor de IA real está
+conectada la app (`lib/ai.ts` centraliza el enrutador entre Claude, DeepSeek y el mock).
 
 ### Otros comandos útiles
 

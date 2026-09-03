@@ -1,12 +1,57 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Business, KnowledgeBaseEntry, RiskLevel } from "@prisma/client";
 
-const MODEL = "claude-sonnet-5";
+const CLAUDE_MODEL = "claude-sonnet-5";
+const DEEPSEEK_MODEL = "deepseek-chat";
+const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
-function getClient(): Anthropic | null {
+/**
+ * Proveedor de IA activo: Claude si hay ANTHROPIC_API_KEY, si no DeepSeek si
+ * hay DEEPSEEK_API_KEY, si no, ninguno (modo mock).
+ */
+export function getAiProvider(): "claude" | "deepseek" | null {
+  if (process.env.ANTHROPIC_API_KEY) return "claude";
+  if (process.env.DEEPSEEK_API_KEY) return "deepseek";
+  return null;
+}
+
+function getClaudeClient(): Anthropic | null {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
   return new Anthropic({ apiKey });
+}
+
+/**
+ * Llama a la API de DeepSeek (compatible con el formato de OpenAI) vía HTTP
+ * directo — no hace falta ningún SDK adicional.
+ */
+async function callDeepSeek(systemPrompt: string, userPrompt: string): Promise<string | null> {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch(DEEPSEEK_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: DEEPSEEK_MODEL,
+      max_tokens: 600,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`DeepSeek respondió ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const content: string | undefined = data?.choices?.[0]?.message?.content;
+  return content?.trim() ?? null;
 }
 
 export function buildKnowledgeBaseContext(entries: Pick<KnowledgeBaseEntry, "type" | "label" | "value">[]): string {
@@ -127,19 +172,7 @@ function mockGenerate(params: GenerateParams, riskLevel: RiskLevel): string {
   );
 }
 
-export async function generateResponse(params: GenerateParams, riskLevel: RiskLevel): Promise<string> {
-  const client = getClient();
-
-  if (riskLevel === "HIGH") {
-    // Riesgo alto: nunca se genera una respuesta completa automáticamente.
-    // Se ofrece solo la plantilla corta de contención (determinística).
-    return generateContainmentTemplate(params.business, params.reviewAuthor);
-  }
-
-  if (!client) {
-    return mockGenerate(params, riskLevel);
-  }
-
+function buildPrompt(params: GenerateParams, riskLevel: RiskLevel): { systemPrompt: string; userPrompt: string } {
   const { business, reviewRating, reviewText, reviewAuthor, kbEntries, feedback, previousContent } = params;
   const context = buildKnowledgeBaseContext(kbEntries);
 
@@ -174,25 +207,48 @@ ${
 
 Responde ÚNICAMENTE con el texto de la respuesta, sin comillas ni explicaciones adicionales.`;
 
-  try {
-    const message = await client.messages.create({
-      model: MODEL,
-      max_tokens: 600,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
-    });
+  return { systemPrompt, userPrompt };
+}
 
-    const textBlock = message.content.find((b) => b.type === "text");
-    if (textBlock && textBlock.type === "text") {
-      return textBlock.text.trim();
-    }
+async function callClaude(client: Anthropic, systemPrompt: string, userPrompt: string): Promise<string | null> {
+  const message = await client.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 600,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userPrompt }],
+  });
+
+  const textBlock = message.content.find((b) => b.type === "text");
+  return textBlock && textBlock.type === "text" ? textBlock.text.trim() : null;
+}
+
+export async function generateResponse(params: GenerateParams, riskLevel: RiskLevel): Promise<string> {
+  if (riskLevel === "HIGH") {
+    // Riesgo alto: nunca se genera una respuesta completa automáticamente.
+    // Se ofrece solo la plantilla corta de contención (determinística).
+    return generateContainmentTemplate(params.business, params.reviewAuthor);
+  }
+
+  const provider = getAiProvider();
+  if (!provider) {
     return mockGenerate(params, riskLevel);
+  }
+
+  const { systemPrompt, userPrompt } = buildPrompt(params, riskLevel);
+
+  try {
+    const content =
+      provider === "claude"
+        ? await callClaude(getClaudeClient()!, systemPrompt, userPrompt)
+        : await callDeepSeek(systemPrompt, userPrompt);
+
+    return content ?? mockGenerate(params, riskLevel);
   } catch (err) {
-    console.error("Error generando respuesta con Claude, usando fallback mock:", err);
+    console.error(`Error generando respuesta con ${provider}, usando fallback mock:`, err);
     return mockGenerate(params, riskLevel);
   }
 }
 
 export function isAiConfigured(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+  return getAiProvider() !== null;
 }
