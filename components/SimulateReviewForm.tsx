@@ -15,6 +15,19 @@ export default function SimulateReviewForm({ examples }: { examples: QuickExampl
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastPickedText, setLastPickedText] = useState<string | null>(null);
+
+  const ratingsInOrder = Array.from(new Set(examples.map((ex) => ex.rating)));
+
+  function pickExample(exampleRating: number) {
+    const pool = examples.filter((ex) => ex.rating === exampleRating);
+    const candidates = pool.filter((ex) => ex.text !== lastPickedText);
+    const options = candidates.length > 0 ? candidates : pool;
+    const picked = options[Math.floor(Math.random() * options.length)];
+    setRating(picked.rating);
+    setText(picked.text);
+    setLastPickedText(picked.text);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -77,25 +90,25 @@ export default function SimulateReviewForm({ examples }: { examples: QuickExampl
           placeholder="Escribe o pega el texto de una reseña..."
         />
         <div className="flex flex-wrap gap-2 mt-2">
-          {examples.map((ex, i) => (
+          {ratingsInOrder.map((r) => (
             <button
               type="button"
-              key={i}
-              onClick={() => {
-                setRating(ex.rating);
-                setText(ex.text);
-              }}
+              key={r}
+              onClick={() => pickExample(r)}
               className={`text-xs rounded-full border px-3 py-1 transition-colors ${
-                ex.rating <= 1
+                r <= 1
                   ? "border-accent-200 text-accent-700 hover:border-accent-400 hover:bg-accent-50"
                   : "border-gray-200 text-gray-500 hover:border-brand-300 hover:text-brand-700"
               }`}
             >
-              Ejemplo {ex.rating}★{ex.rating <= 1 ? " (riesgo alto)" : ""}
+              Ejemplo {r}★{r <= 1 ? " (riesgo alto)" : ""}
             </button>
           ))}
         </div>
-        <p className="text-xs text-gray-400 mt-1">Los ejemplos están adaptados al sector de tu negocio.</p>
+        <p className="text-xs text-gray-400 mt-1">
+          Los ejemplos están adaptados al sector de tu negocio — cada clic sortea una variante distinta a la
+          anterior.
+        </p>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

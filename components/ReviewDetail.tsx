@@ -72,14 +72,14 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
     }
   }
 
-  async function handleRegenerate() {
+  async function handleRegenerate(withFeedback?: string) {
     setBusy("regenerate");
     setError(null);
     try {
       const res = await fetch(`/api/reviews/${review.id}/regenerate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ feedback }),
+        body: JSON.stringify({ feedback: withFeedback ?? feedback }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "No se pudo regenerar la respuesta.");
@@ -158,11 +158,18 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
                 {busy === "approve" ? "Aprobando..." : "✅ Aprobar y copiar"}
               </button>
               <button
-                onClick={() => setShowFeedbackBox((v) => !v)}
+                onClick={() => handleRegenerate("")}
                 disabled={busy !== null}
                 className="rounded-lg border border-accent-200 px-4 py-2 text-sm font-medium text-accent-700 hover:bg-accent-50 disabled:opacity-60 transition-colors"
               >
-                🔄 Regenerar
+                {busy === "regenerate" ? "Regenerando..." : "🔄 Regenerar"}
+              </button>
+              <button
+                onClick={() => setShowFeedbackBox((v) => !v)}
+                disabled={busy !== null}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-60 transition-colors"
+              >
+                💬 Regenerar con feedback
               </button>
               <button
                 onClick={handleCopy}
@@ -192,15 +199,15 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
               onChange={(e) => setFeedback(e.target.value)}
             />
             <button
-              onClick={handleRegenerate}
+              onClick={() => handleRegenerate(feedback)}
               disabled={busy !== null}
               className="mt-2 rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-600 disabled:opacity-60 transition-colors"
             >
-              {busy === "regenerate" ? "Regenerando..." : "Generar otra versión"}
+              {busy === "regenerate" ? "Regenerando..." : "Generar con este feedback"}
             </button>
             <p className="text-xs text-gray-400 mt-2">
-              Cada vez que le pidas otra versión, la IA genera una redacción distinta a la anterior. Si escribes
-              feedback, además se guarda como preferencia aprendida en la base de conocimiento.
+              Si escribes feedback, se guarda como preferencia aprendida en la base de conocimiento. Sin feedback,
+              &ldquo;🔄 Regenerar&rdquo; igual te da una redacción distinta a la anterior.
             </p>
           </div>
         )}
