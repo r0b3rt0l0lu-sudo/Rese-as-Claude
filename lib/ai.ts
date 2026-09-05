@@ -4,14 +4,20 @@ import type { Business, KnowledgeBaseEntry, RiskLevel } from "@prisma/client";
 const CLAUDE_MODEL = "claude-sonnet-5";
 const DEEPSEEK_MODEL = "deepseek-chat";
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
+// Alias estable de Google: siempre apunta al último Gemini Flash disponible,
+// para no tener que actualizar el nombre del modelo a mano.
+const GEMINI_MODEL = "gemini-flash-latest";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 /**
  * Proveedor de IA activo: Claude si hay ANTHROPIC_API_KEY, si no DeepSeek si
- * hay DEEPSEEK_API_KEY, si no, ninguno (modo mock).
+ * hay DEEPSEEK_API_KEY, si no Gemini si hay GEMINI_API_KEY, si no, ninguno
+ * (modo mock).
  */
-export function getAiProvider(): "claude" | "deepseek" | null {
+export function getAiProvider(): "claude" | "deepseek" | "gemini" | null {
   if (process.env.ANTHROPIC_API_KEY) return "claude";
   if (process.env.DEEPSEEK_API_KEY) return "deepseek";
+  if (process.env.GEMINI_API_KEY) return "gemini";
   return null;
 }
 
@@ -47,6 +53,41 @@ async function callDeepSeek(systemPrompt: string, userPrompt: string): Promise<s
 
   if (!res.ok) {
     throw new Error(`DeepSeek respondió ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const content: string | undefined = data?.choices?.[0]?.message?.content;
+  return content?.trim() ?? null;
+}
+
+/**
+ * Llama a la API de Gemini usando su endpoint compatible con el formato de
+ * OpenAI (misma forma de request/response que callDeepSeek) — así no hace
+ * falta el SDK de Google. Requiere una API key gratuita de Google AI Studio
+ * (aistudio.google.com).
+ */
+async function callGemini(systemPrompt: string, userPrompt: string): Promise<string | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch(GEMINI_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: GEMINI_MODEL,
+      max_tokens: 600,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Gemini respondió ${res.status}: ${await res.text()}`);
   }
 
   const data = await res.json();
@@ -291,7 +332,9 @@ export async function generateResponse(params: GenerateParams, riskLevel: RiskLe
     const content =
       provider === "claude"
         ? await callClaude(getClaudeClient()!, systemPrompt, userPrompt)
-        : await callDeepSeek(systemPrompt, userPrompt);
+        : provider === "deepseek"
+          ? await callDeepSeek(systemPrompt, userPrompt)
+          : await callGemini(systemPrompt, userPrompt);
 
     return { content: content ?? mockGenerate(params, riskLevel) };
   } catch (err) {

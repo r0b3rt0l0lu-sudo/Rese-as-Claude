@@ -29,8 +29,9 @@ export default async function SettingsPage() {
       >
         {provider === "claude" && "✅ Generación con IA real (Claude) activa."}
         {provider === "deepseek" && "✅ Generación con IA real (DeepSeek) activa."}
+        {provider === "gemini" && "✅ Generación con IA real (Gemini) activa."}
         {!provider &&
-          "⚠️ No hay ANTHROPIC_API_KEY ni DEEPSEEK_API_KEY configuradas — se están usando respuestas de ejemplo (modo mock) para que puedas probar el flujo. Agrega una de las dos en el archivo .env para generación real."}
+          "⚠️ No hay ANTHROPIC_API_KEY, DEEPSEEK_API_KEY ni GEMINI_API_KEY configuradas — se están usando respuestas de ejemplo (modo mock) para que puedas probar el flujo. Agrega una de las tres en el archivo .env para generación real."}
       </div>
 
       <AutopilotControl autopilotEnabled={business.autopilotEnabled} eligibility={eligibility} />

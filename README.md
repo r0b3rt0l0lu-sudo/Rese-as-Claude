@@ -18,8 +18,9 @@ incremental (ver [Roadmap](#roadmap--próximos-pasos) más abajo).
   desarrollo y producción.
 - **NextAuth.js** (credenciales por correo/contraseña) para proteger el acceso a los datos del
   negocio.
-- **Claude (Anthropic API) o DeepSeek** para la generación de respuestas — configura la que
-  tengas, o ninguna y usa el generador "mock" de respaldo (para probar el flujo sin costo).
+- **Claude (Anthropic API), DeepSeek o Gemini** para la generación de respuestas — configura la
+  que tengas, o ninguna y usa el generador "mock" de respaldo (para probar el flujo sin costo).
+  Gemini tiene un tier gratis (API key gratuita en [Google AI Studio](https://aistudio.google.com/apikey)).
 - **pdf-parse** para extraer texto de PDFs subidos a la base de conocimiento.
 - **Desplegado en [Vercel](https://vercel.com)**, conectado a la rama de este proyecto.
 
@@ -46,8 +47,8 @@ te pide esas credenciales antes de mostrar cualquier dato del negocio.
 
 Sin configurar nada, la app usa un generador de respuestas "mock" (plantillas basadas en la
 calificación y el tono del negocio) para que puedas probar el flujo completo de inmediato. Para
-usar generación real, agrega **una** de estas dos API keys en `.env` (si configuras ambas, se
-prioriza Claude):
+usar generación real, agrega **una** de estas API keys en `.env` (si configuras varias, se
+prioriza en este orden: Claude > DeepSeek > Gemini):
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
@@ -56,9 +57,13 @@ o
 ```
 DEEPSEEK_API_KEY=sk-...
 ```
+o (con tier gratis — key gratuita en [Google AI Studio](https://aistudio.google.com/apikey))
+```
+GEMINI_API_KEY=...
+```
 
 La página de Ajustes siempre muestra si estás en modo mock o con cuál proveedor de IA real está
-conectada la app (`lib/ai.ts` centraliza el enrutador entre Claude, DeepSeek y el mock).
+conectada la app (`lib/ai.ts` centraliza el enrutador entre Claude, DeepSeek, Gemini y el mock).
 
 ### Otros comandos útiles
 
