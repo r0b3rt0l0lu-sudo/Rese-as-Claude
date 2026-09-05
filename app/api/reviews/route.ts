@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     where: { businessId: business.id, active: true },
   });
 
-  const content = await generateResponse(
+  const { content, aiError } = await generateResponse(
     {
       business,
       reviewRating: rating,
@@ -76,7 +76,9 @@ export async function POST(req: NextRequest) {
     reviewId: review.id,
     action: "RESPONSE_GENERATED",
     actor: "SYSTEM",
-    detail: "Primera versión de respuesta generada por IA.",
+    detail: aiError
+      ? `Primera versión generada con el fallback mock — la IA real falló: ${aiError}`
+      : "Primera versión de respuesta generada por IA.",
   });
 
   if (triage.level === "HIGH") {

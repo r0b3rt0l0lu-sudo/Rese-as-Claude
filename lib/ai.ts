@@ -263,10 +263,22 @@ async function callClaude(client: Anthropic, systemPrompt: string, userPrompt: s
   return textBlock && textBlock.type === "text" ? textBlock.text.trim() : null;
 }
 
-export async function generateResponse(params: GenerateParams, riskLevel: RiskLevel): Promise<string> {
+export interface GenerateResult {
+  content: string;
+  /**
+   * Si la IA real está configurada pero la llamada falló (key inválida, sin
+   * saldo, error de red, etc.), aquí queda el motivo — para que la UI pueda
+   * avisar que esta respuesta en particular es del fallback mock en vez de
+   * fallar en silencio (antes solo quedaba un console.error en el servidor,
+   * invisible para el dueño del negocio).
+   */
+  aiError?: string;
+}
+
+export async function generateResponse(params: GenerateParams, riskLevel: RiskLevel): Promise<GenerateResult> {
   const provider = getAiProvider();
   if (!provider) {
-    return mockGenerate(params, riskLevel);
+    return { content: mockGenerate(params, riskLevel) };
   }
 
   // Riesgo alto: nunca se genera una respuesta completa a partir de la base
@@ -281,10 +293,11 @@ export async function generateResponse(params: GenerateParams, riskLevel: RiskLe
         ? await callClaude(getClaudeClient()!, systemPrompt, userPrompt)
         : await callDeepSeek(systemPrompt, userPrompt);
 
-    return content ?? mockGenerate(params, riskLevel);
+    return { content: content ?? mockGenerate(params, riskLevel) };
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error(`Error generando respuesta con ${provider}, usando fallback mock:`, err);
-    return mockGenerate(params, riskLevel);
+    return { content: mockGenerate(params, riskLevel), aiError: message };
   }
 }
 

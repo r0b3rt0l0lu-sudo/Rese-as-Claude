@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Sin feedback, igual se pide una versión ALTERNATIVA (no la misma de
   // siempre): ver lib/ai.ts, que varía la redacción cuando hay
   // previousContent aunque no haya feedback explícito.
-  const content = await generateResponse(
+  const { content, aiError } = await generateResponse(
     {
       business,
       reviewRating: review.rating,
@@ -76,8 +76,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     reviewId: review.id,
     action: "RESPONSE_REGENERATED",
     actor: "HUMAN",
-    detail: feedback ? `Feedback: "${feedback}"` : "Regenerada sin feedback (pidió otra versión).",
+    detail:
+      (feedback ? `Feedback: "${feedback}"` : "Regenerada sin feedback (pidió otra versión).") +
+      (aiError ? ` — usó fallback mock, la IA real falló: ${aiError}` : ""),
   });
 
-  return NextResponse.json({ content: newResponse.content });
+  return NextResponse.json({ content: newResponse.content, aiError });
 }

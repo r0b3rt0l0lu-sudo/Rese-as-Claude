@@ -68,7 +68,7 @@ async function main() {
       },
     });
 
-    const content = await generateResponse(
+    const { content } = await generateResponse(
       {
         business,
         reviewRating: example.rating,

@@ -35,6 +35,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
   const [showFeedbackBox, setShowFeedbackBox] = useState(false);
   const [busy, setBusy] = useState<"approve" | "regenerate" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [aiWarning, setAiWarning] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   const isPending = review.status === "PENDING";
@@ -55,6 +56,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
   async function handleApprove() {
     setBusy("approve");
     setError(null);
+    setAiWarning(null);
     try {
       const res = await fetch(`/api/reviews/${review.id}/approve`, {
         method: "POST",
@@ -75,6 +77,7 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
   async function handleRegenerate(withFeedback?: string) {
     setBusy("regenerate");
     setError(null);
+    setAiWarning(null);
     try {
       const res = await fetch(`/api/reviews/${review.id}/regenerate`, {
         method: "POST",
@@ -86,6 +89,11 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
       setContent(data.content);
       setFeedback("");
       setShowFeedbackBox(false);
+      if (data.aiError) {
+        setAiWarning(
+          `⚠️ No se pudo contactar a la IA real (${data.aiError}) — esta versión es del generador de ejemplo, no incorpora tu feedback ni lo aprendido antes. Revisa la key/saldo del proveedor y vuelve a intentar.`
+        );
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ocurrió un error inesperado.");
@@ -146,6 +154,11 @@ export default function ReviewDetail({ review }: { review: ReviewData }) {
         )}
 
         {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+        {aiWarning && (
+          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2">
+            {aiWarning}
+          </p>
+        )}
 
         <div className="flex flex-wrap gap-2 mt-4">
           {isPending ? (
