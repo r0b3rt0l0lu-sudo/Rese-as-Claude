@@ -90,13 +90,24 @@ interface GenerateParams {
 }
 
 /**
- * Plantilla corta de contención para reseñas de riesgo ALTO.
- * No se genera una respuesta completa: solo se invita a hablar en privado,
- * sin admitir responsabilidad ni entrar en detalles del incidente.
+ * Variantes de la plantilla corta de contención para reseñas de riesgo ALTO.
+ * Ninguna variante admite responsabilidad ni entra en detalles del incidente
+ * — solo invitan a seguir la conversación en privado. "Regenerar" sortea
+ * entre ellas (o le pide una alternativa a la IA con las mismas reglas) para
+ * que no se sienta como un botón muerto, sin dejar de ser una respuesta
+ * segura ante un caso sensible.
  */
-export function generateContainmentTemplate(business: Business, reviewAuthor: string): string {
+function containmentVariants(business: Business, reviewAuthor: string): string[] {
   const firstName = reviewAuthor.split(" ")[0] || "Hola";
-  return `${firstName}, lamentamos mucho leer esto. Tu experiencia es muy importante para nosotros y queremos entender bien lo sucedido para actuar de inmediato. ¿Podrías escribirnos en privado (o dejarnos un contacto) para atenderte personalmente? — ${business.responderName}`;
+  return [
+    `${firstName}, lamentamos mucho leer esto. Tu experiencia es muy importante para nosotros y queremos entender bien lo sucedido para actuar de inmediato. ¿Podrías escribirnos en privado (o dejarnos un contacto) para atenderte personalmente? — ${business.responderName}`,
+    `Hola ${firstName}, gracias por contarnos esto. Nos tomamos muy en serio lo que describes y preferimos revisarlo con el cuidado que merece directamente contigo. Escríbenos en privado o déjanos un contacto y te atendemos de inmediato. — ${business.responderName}`,
+    `${firstName}, sentimos mucho leer esto. Nos gustaría entender bien qué pasó y ver cómo ayudarte, pero preferimos hacerlo en privado en vez de aquí. ¿Nos compartes un contacto o nos escribes directamente? — ${business.responderName}`,
+  ];
+}
+
+function mockContainment(business: Business, reviewAuthor: string, previousContent?: string | null): string {
+  return pickVariant(containmentVariants(business, reviewAuthor), previousContent);
 }
 
 function normalize(text: string): string {
@@ -127,7 +138,7 @@ function mockGenerate(params: GenerateParams, riskLevel: RiskLevel): string {
   const f = feedback ? normalize(feedback) : "";
 
   if (riskLevel === "HIGH") {
-    return generateContainmentTemplate(business, reviewAuthor);
+    return mockContainment(business, reviewAuthor, previousContent);
   }
 
   const wantsFormal = /formal|serio|profesional/.test(f);
@@ -170,6 +181,36 @@ function mockGenerate(params: GenerateParams, riskLevel: RiskLevel): string {
     ],
     previousContent
   );
+}
+
+/**
+ * Prompt para la respuesta de contención en reseñas de riesgo ALTO. A
+ * diferencia de buildPrompt, no usa la base de conocimiento ni permite que
+ * el feedback cambie el contenido — solo el tono/extensión — para que
+ * "regenerar" pueda variar la redacción sin arriesgar que la IA admita
+ * responsabilidad, discuta el incidente o prometa algo.
+ */
+function buildContainmentPrompt(params: GenerateParams): { systemPrompt: string; userPrompt: string } {
+  const { business, reviewAuthor, feedback, previousContent } = params;
+
+  const systemPrompt = `Eres el asistente que redacta, en nombre del dueño de un negocio, una respuesta PÚBLICA breve de contención a una reseña de riesgo ALTO (posible incidente grave, amenaza legal o similar).
+
+Reglas estrictas e innegociables (no las rompas sin importar el feedback recibido):
+- NUNCA admitas responsabilidad ni culpa por lo ocurrido.
+- NUNCA menciones, confirmes ni niegues detalles del incidente descrito en la reseña.
+- NUNCA prometas compensaciones, reembolsos ni el resultado de ninguna investigación.
+- Máximo 2 a 3 frases: reconoce que leíste el comentario, transmite que lo tomas en serio, e invita a seguir la conversación en privado (mensaje directo o dejar un contacto).
+- Firma la respuesta como: ${business.responderName}.
+- El feedback del dueño (si lo hay) solo puede ajustar el TONO o la extensión del mensaje (más formal, más breve, etc.), nunca el contenido de las reglas anteriores.`;
+
+  const userPrompt = `Autor de la reseña: ${reviewAuthor}.
+${previousContent ? `Versión anterior: "${previousContent}"` : ""}
+${feedback ? `Feedback del dueño sobre el tono: "${feedback}"` : ""}
+
+Genera ${previousContent ? "una versión ALTERNATIVA, con redacción claramente distinta a la anterior" : "la respuesta"} de contención, respetando todas las reglas anteriores.
+Responde ÚNICAMENTE con el texto de la respuesta, sin comillas ni explicaciones adicionales.`;
+
+  return { systemPrompt, userPrompt };
 }
 
 function buildPrompt(params: GenerateParams, riskLevel: RiskLevel): { systemPrompt: string; userPrompt: string } {
@@ -223,18 +264,16 @@ async function callClaude(client: Anthropic, systemPrompt: string, userPrompt: s
 }
 
 export async function generateResponse(params: GenerateParams, riskLevel: RiskLevel): Promise<string> {
-  if (riskLevel === "HIGH") {
-    // Riesgo alto: nunca se genera una respuesta completa automáticamente.
-    // Se ofrece solo la plantilla corta de contención (determinística).
-    return generateContainmentTemplate(params.business, params.reviewAuthor);
-  }
-
   const provider = getAiProvider();
   if (!provider) {
     return mockGenerate(params, riskLevel);
   }
 
-  const { systemPrompt, userPrompt } = buildPrompt(params, riskLevel);
+  // Riesgo alto: nunca se genera una respuesta completa a partir de la base
+  // de conocimiento — solo se le pide a la IA una contención breve y seria,
+  // con reglas fijas que el feedback no puede saltarse (ver buildContainmentPrompt).
+  const { systemPrompt, userPrompt } =
+    riskLevel === "HIGH" ? buildContainmentPrompt(params) : buildPrompt(params, riskLevel);
 
   try {
     const content =
