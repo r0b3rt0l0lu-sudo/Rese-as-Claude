@@ -18,11 +18,11 @@ incremental (ver [Roadmap](#roadmap--próximos-pasos) más abajo).
   desarrollo y producción.
 - **NextAuth.js** (credenciales por correo/contraseña) para proteger el acceso a los datos del
   negocio.
-- **Claude (Anthropic API), DeepSeek, Gemini o Groq** para la generación de respuestas — configura
-  la que tengas, o ninguna y usa el generador "mock" de respaldo (para probar el flujo sin costo).
-  Gemini y Groq tienen tier gratis (keys gratuitas en
-  [Google AI Studio](https://aistudio.google.com/apikey) y [Groq Console](https://console.groq.com/keys)
-  respectivamente).
+- **Claude (Anthropic API), DeepSeek, Gemini, Groq u OpenRouter** para la generación de
+  respuestas — configura la que tengas, o ninguna y usa el generador "mock" de respaldo (para
+  probar el flujo sin costo). Gemini, Groq y OpenRouter tienen tier gratis (keys gratuitas en
+  [Google AI Studio](https://aistudio.google.com/apikey), [Groq Console](https://console.groq.com/keys)
+  y [OpenRouter](https://openrouter.ai/keys) respectivamente).
 - **pdf-parse** para extraer texto de PDFs subidos a la base de conocimiento.
 - **Desplegado en [Vercel](https://vercel.com)**, conectado a la rama de este proyecto.
 
@@ -50,7 +50,7 @@ te pide esas credenciales antes de mostrar cualquier dato del negocio.
 Sin configurar nada, la app usa un generador de respuestas "mock" (plantillas basadas en la
 calificación y el tono del negocio) para que puedas probar el flujo completo de inmediato. Para
 usar generación real, agrega **una** de estas API keys en `.env` (si configuras varias, se
-prioriza en este orden: Claude > DeepSeek > Gemini > Groq):
+prioriza en este orden: Claude > DeepSeek > Gemini > Groq > OpenRouter):
 
 ```
 ANTHROPIC_API_KEY=sk-ant-...
@@ -69,10 +69,19 @@ una cuenta de Google)
 ```
 GROQ_API_KEY=...
 ```
+o (con tier gratis usando modelos ":free" — key gratuita en [OpenRouter](https://openrouter.ai/keys))
+```
+OPENROUTER_API_KEY=...
+```
 
 La página de Ajustes siempre muestra si estás en modo mock o con cuál proveedor de IA real está
-conectada la app (`lib/ai.ts` centraliza el enrutador entre Claude, DeepSeek, Gemini, Groq y el
-mock).
+conectada la app (`lib/ai.ts` centraliza el enrutador entre Claude, DeepSeek, Gemini, Groq,
+OpenRouter y el mock).
+
+> Los nombres de modelo de Groq (`GROQ_MODEL`) y OpenRouter (`OPENROUTER_MODEL`) se pueden
+> sobreescribir en `.env` sin tocar código, por si el modelo gratis por defecto queda
+> descontinuado — revisa los modelos gratis vigentes de OpenRouter en
+> [openrouter.ai/models?max_price=0](https://openrouter.ai/models?max_price=0).
 
 ### Otros comandos útiles
 

@@ -31,8 +31,9 @@ export default async function SettingsPage() {
         {provider === "deepseek" && "✅ Generación con IA real (DeepSeek) activa."}
         {provider === "gemini" && "✅ Generación con IA real (Gemini) activa."}
         {provider === "groq" && "✅ Generación con IA real (Groq) activa."}
+        {provider === "openrouter" && "✅ Generación con IA real (OpenRouter) activa."}
         {!provider &&
-          "⚠️ No hay ANTHROPIC_API_KEY, DEEPSEEK_API_KEY, GEMINI_API_KEY ni GROQ_API_KEY configuradas — se están usando respuestas de ejemplo (modo mock) para que puedas probar el flujo. Agrega una de las cuatro en el archivo .env para generación real."}
+          "⚠️ No hay ninguna API key de IA configurada (Claude, DeepSeek, Gemini, Groq u OpenRouter) — se están usando respuestas de ejemplo (modo mock) para que puedas probar el flujo. Agrega una en el archivo .env para generación real."}
       </div>
 
       <AutopilotControl autopilotEnabled={business.autopilotEnabled} eligibility={eligibility} />

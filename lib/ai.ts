@@ -14,17 +14,25 @@ const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat
 // a fallar con "model decommissioned" o similar.
 const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+// Los modelos ":free" de OpenRouter cambian con más frecuencia que los de
+// los otros proveedores — por eso es aún más importante poder
+// sobreescribirlo con OPENROUTER_MODEL sin tocar código. Revisa modelos
+// gratis vigentes en https://openrouter.ai/models?max_price=0
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 /**
  * Proveedor de IA activo: Claude si hay ANTHROPIC_API_KEY, si no DeepSeek si
  * hay DEEPSEEK_API_KEY, si no Gemini si hay GEMINI_API_KEY, si no Groq si hay
- * GROQ_API_KEY, si no, ninguno (modo mock).
+ * GROQ_API_KEY, si no OpenRouter si hay OPENROUTER_API_KEY, si no, ninguno
+ * (modo mock).
  */
-export function getAiProvider(): "claude" | "deepseek" | "gemini" | "groq" | null {
+export function getAiProvider(): "claude" | "deepseek" | "gemini" | "groq" | "openrouter" | null {
   if (process.env.ANTHROPIC_API_KEY) return "claude";
   if (process.env.DEEPSEEK_API_KEY) return "deepseek";
   if (process.env.GEMINI_API_KEY) return "gemini";
   if (process.env.GROQ_API_KEY) return "groq";
+  if (process.env.OPENROUTER_API_KEY) return "openrouter";
   return null;
 }
 
@@ -129,6 +137,40 @@ async function callGroq(systemPrompt: string, userPrompt: string): Promise<strin
 
   if (!res.ok) {
     throw new Error(`Groq respondió ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const content: string | undefined = data?.choices?.[0]?.message?.content;
+  return content?.trim() ?? null;
+}
+
+/**
+ * Llama a la API de OpenRouter (también compatible con el formato de
+ * OpenAI) usando un modelo gratuito (":free"). Requiere una API key
+ * gratuita de openrouter.ai.
+ */
+async function callOpenRouter(systemPrompt: string, userPrompt: string): Promise<string | null> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL,
+      max_tokens: 600,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`OpenRouter respondió ${res.status}: ${await res.text()}`);
   }
 
   const data = await res.json();
@@ -383,6 +425,9 @@ export async function generateResponse(params: GenerateParams, riskLevel: RiskLe
         break;
       case "groq":
         content = await callGroq(systemPrompt, userPrompt);
+        break;
+      case "openrouter":
+        content = await callOpenRouter(systemPrompt, userPrompt);
         break;
     }
 
