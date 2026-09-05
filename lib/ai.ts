@@ -8,16 +8,23 @@ const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 // para no tener que actualizar el nombre del modelo a mano.
 const GEMINI_MODEL = "gemini-flash-latest";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+// Groq no tiene un alias "latest" — a diferencia de los otros, este nombre
+// de modelo puede quedar obsoleto si Groq lo retira. Por eso se puede
+// sobreescribir con GROQ_MODEL en .env sin tocar código si algún día empieza
+// a fallar con "model decommissioned" o similar.
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 /**
  * Proveedor de IA activo: Claude si hay ANTHROPIC_API_KEY, si no DeepSeek si
- * hay DEEPSEEK_API_KEY, si no Gemini si hay GEMINI_API_KEY, si no, ninguno
- * (modo mock).
+ * hay DEEPSEEK_API_KEY, si no Gemini si hay GEMINI_API_KEY, si no Groq si hay
+ * GROQ_API_KEY, si no, ninguno (modo mock).
  */
-export function getAiProvider(): "claude" | "deepseek" | "gemini" | null {
+export function getAiProvider(): "claude" | "deepseek" | "gemini" | "groq" | null {
   if (process.env.ANTHROPIC_API_KEY) return "claude";
   if (process.env.DEEPSEEK_API_KEY) return "deepseek";
   if (process.env.GEMINI_API_KEY) return "gemini";
+  if (process.env.GROQ_API_KEY) return "groq";
   return null;
 }
 
@@ -88,6 +95,40 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<str
 
   if (!res.ok) {
     throw new Error(`Gemini respondió ${res.status}: ${await res.text()}`);
+  }
+
+  const data = await res.json();
+  const content: string | undefined = data?.choices?.[0]?.message?.content;
+  return content?.trim() ?? null;
+}
+
+/**
+ * Llama a la API de Groq (también compatible con el formato de OpenAI) —
+ * misma forma de request/response que callDeepSeek y callGemini. Requiere
+ * una API key gratuita de console.groq.com.
+ */
+async function callGroq(systemPrompt: string, userPrompt: string): Promise<string | null> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: GROQ_MODEL,
+      max_tokens: 600,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Groq respondió ${res.status}: ${await res.text()}`);
   }
 
   const data = await res.json();
@@ -329,12 +370,21 @@ export async function generateResponse(params: GenerateParams, riskLevel: RiskLe
     riskLevel === "HIGH" ? buildContainmentPrompt(params) : buildPrompt(params, riskLevel);
 
   try {
-    const content =
-      provider === "claude"
-        ? await callClaude(getClaudeClient()!, systemPrompt, userPrompt)
-        : provider === "deepseek"
-          ? await callDeepSeek(systemPrompt, userPrompt)
-          : await callGemini(systemPrompt, userPrompt);
+    let content: string | null;
+    switch (provider) {
+      case "claude":
+        content = await callClaude(getClaudeClient()!, systemPrompt, userPrompt);
+        break;
+      case "deepseek":
+        content = await callDeepSeek(systemPrompt, userPrompt);
+        break;
+      case "gemini":
+        content = await callGemini(systemPrompt, userPrompt);
+        break;
+      case "groq":
+        content = await callGroq(systemPrompt, userPrompt);
+        break;
+    }
 
     return { content: content ?? mockGenerate(params, riskLevel) };
   } catch (err) {
