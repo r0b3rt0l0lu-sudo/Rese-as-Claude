@@ -18,7 +18,7 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 // los otros proveedores — por eso es aún más importante poder
 // sobreescribirlo con OPENROUTER_MODEL sin tocar código. Revisa modelos
 // gratis vigentes en https://openrouter.ai/models?max_price=0
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct:free";
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "google/gemma-4-31b-it:free";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 /**
